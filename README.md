@@ -4,11 +4,11 @@ smash-cli工具使用的查找文件（夹）的方法。
 
 # 安装
 
-执行 `npm install smash-find-up --save` 或 `yarn add smash-find-up` 安装。
+执行 `npm i --save smash-find-up` 或 `yarn add smash-find-up` 安装。
 
 # node使用
 
-`Finder.findSync` 接受3个参数，见下面例子：
+使用 `Finder.findSync` 方法来查找文件（夹）。这个方法接受3个参数，见下面例子：
 
 ```javascript
 const Finder = require('smash-find-up');
@@ -26,9 +26,12 @@ if(targetPath instanceof Error) {
 
 # 命令行使用
 
-如果提示没有操作权限，请使用管理员权限运行。
+如果需要全局使用，需要执行 `npm i -g smash-find-up ` 或 `yarn global add smash-find-up` 在全局安装。
+
+使用例子如下：
 
 ```bash
+# !!!!!!!! 如果提示没有操作权限，请使用管理员权限运行。
 # 在当前目录下查找 index.js 的路径
 $ smf target=index.js
 $ smash-find-up name=index.js
