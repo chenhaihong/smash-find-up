@@ -1,0 +1,29 @@
+{
+  "name": "smash-find-up",
+  "version": "1.0.0",
+  "description": "查找一个指定名称的文件或目录，如果存在，则返回它绝对路径。",
+  "main": "index.js",
+  "bin": {
+    "smash-find-up": "bin/index.js"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node ./test/index.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chenhaihong/smash-find-up.git"
+  },
+  "keywords": [
+    "smash",
+    "find-up"
+  ],
+  "author": "erye <erye@tiiit.cn>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chenhaihong/smash-find-up/issues"
+  },
+  "homepage": "https://github.com/chenhaihong/smash-find-up#readme"
+}
