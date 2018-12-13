@@ -16,6 +16,9 @@ class Finder {
      * @param {Number} depth 查找深度，为0时不限制深度
      */
     static findSync(target, dir = CWD, depth = 0) {
+        if (target === '' || typeof target !== 'string') {
+            return new Error(ERROR_MESSAGE.TARGET_MUST_BE_A_STRING);
+        }
         if (this.isDir(dir)) {
             return this.searchSync(target, [dir], { dirSrc: dir, max: depth });
         }
@@ -76,33 +79,32 @@ class Finder {
     static getTargetPathAndNextDirs(target, dirs) {
         let targetPath = '';
         let nextDirs = []; // 存放下一轮等待查找的目录
-        try { // 因为使用了forEach循环，所以使用trycatch和抛出异常的方式来终止循环
 
-            // （1）遍历dirs，对每个dir分别执行逻辑
-            dirs.forEach(dir => {
-                // （1.1）读取dir这个目录的内容，遍历他们查找targetPath，和更新nextDirs
-                const contents = fs.readdirSync(dir);
-                for (const content of contents) {
-                    const contentPath = `${dir}/${content}`; // 这个内容的路径
-                    // （1.2.1）当前的内容名称与目标内容的名称一致，抛出路径，结束后面的逻辑
-                    if (content === target) {
-                        targetPath = contentPath;
-                        throw targetPath;
-                    }
-                    // （1.2.2）当前内容不是要查找的目标内容，但是它是一个目录，则放入下一轮的查询
-                    else {
-                        fs.statSync(contentPath).isDirectory() && nextDirs.push(contentPath);
-                    }
+        // （1）遍历dirs，对每个dir分别执行逻辑
+        for (const dir of dirs) {
+            // 如果已经找到路径，退出循环
+            if(targetPath) break;
+
+            // （1.1）读取dir这个目录的内容，遍历他们查找targetPath，和更新nextDirs
+            const contents = fs.readdirSync(dir);
+            for (const content of contents) {
+                const contentPath = `${dir}/${content}`; // 这个内容的路径
+                // （1.2.1）当前的内容名称与目标内容的名称一致，抛出路径，结束后面的逻辑
+                if (content === target) {
+                    targetPath = path.normalize(path.resolve(contentPath));
+                    break;
                 }
-            });
-
-        } catch (throwValue) {
-            if (throwValue instanceof Error) {
-                throw throwValue;
+                // （1.2.2）当前内容不是要查找的目标内容，但是它是一个目录，则放入下一轮的查询
+                else {
+                    // 如果目录没有权限，会报如下的错误：
+                    // EPERM: operation not permitted, stat 'C:\Windows/CSC/v2.0.6'
+                    // 解决方法：使用管理员权限运行
+                    fs.statSync(contentPath).isDirectory() && nextDirs.push(contentPath);
+                }
             }
-        } finally {
-            return { targetPath, nextDirs };
         }
+
+        return { targetPath, nextDirs };
     }
 
     /**

@@ -1,5 +1,7 @@
 {
+
     "PARAM_DIR_MUST_BE_DIR_PATH": "The \"dir\" argument must be a directory path.",
     "SEARCH_DEPTH_LIMIT": "Search depth limit.",
-    "TARGET_NOT_FOUND": "Target not found."
+    "TARGET_NOT_FOUND": "Target not found.",
+    "TARGET_MUST_BE_A_STRING": "The \"target\" argument must be a non-empty string."
 }
