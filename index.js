@@ -16,13 +16,16 @@ class Finder {
      * @param {Number} depth 查找深度，为0时不限制深度
      */
     static findSync(target, dir = CWD, depth = 0) {
+        let returnValue = { error: null, targetPath: '' };
         if (target === '' || typeof target !== 'string') {
-            return new Error(ERROR_MESSAGE.TARGET_MUST_BE_A_STRING);
+            returnValue.error = new Error(ERROR_MESSAGE.TARGET_MUST_BE_A_STRING);
+        } else if (this.isDir(dir)) {
+            dir = path.resolve(dir); // 转换为绝对路径
+            returnValue = this.searchSync(target, [dir], { dirSrc: dir, max: depth });
+        } else {
+            returnValue.error = new Error(ERROR_MESSAGE.PARAM_DIR_MUST_BE_DIR_PATH);
         }
-        if (this.isDir(dir)) {
-            return this.searchSync(target, [dir], { dirSrc: dir, max: depth });
-        }
-        return new Error(ERROR_MESSAGE.PARAM_DIR_MUST_BE_DIR_PATH);
+        return returnValue;
     }
 
     /**
@@ -32,27 +35,34 @@ class Finder {
      * @param {Object} depthOption 限制查找深度的参数对象
      */
     static searchSync(target, dirs, depthOption) {
+        let returnValue = { error: null, targetPath: '' };
+
         // （1）遍历当前层次的目录，将在这层的目录里面查找target和下一轮等待查询的目录nextDirs
-        const { targetPath, nextDirs } = this.getTargetPathAndNextDirs(target, dirs);
+        const { error, targetPath, nextDirs } = this.getTargetPathAndNextDirs(target, dirs);
+        if (error) {
+            returnValue.error = error;
+        }
         // （2.1）查找到了targetPath，返回targetPath
-        if (targetPath) {
-            return targetPath;
+        else if (targetPath) {
+            returnValue.targetPath = targetPath;
         }
         // （2.2）下一层深度有目录，则在下一层深度的目录里查找目标
         else if (nextDirs.length) {
             // （2.2.1）不限制深度||还没达到深度限制，进入下一层深度的查找
             if (this.isDepthOk(nextDirs[0], depthOption)) {
-                return this.searchSync(target, nextDirs, depthOption);
+                returnValue = this.searchSync(target, nextDirs, depthOption);
             }
             // （2.2.2）已经达到深度限制，抛出深度限制的错误
             else {
-                return new Error(ERROR_MESSAGE.SEARCH_DEPTH_LIMIT);
+                returnValue.error = new Error(ERROR_MESSAGE.SEARCH_DEPTH_LIMIT);
             }
         }
         // （2.3）查找完了所有的目录，抛出找不到目标的错误
         else {
-            return new Error(ERROR_MESSAGE.TARGET_NOT_FOUND);
+            returnValue.error = new Error(ERROR_MESSAGE.TARGET_NOT_FOUND);
         }
+
+        return returnValue;
     }
 
     /**
@@ -71,40 +81,47 @@ class Finder {
     }
 
     /**
-     * 返回查找到目标内容的绝对路径，同时，包含下一轮要查询的目录
+     * 返回查找到目标内容的绝对路径，同时，包含下一轮要查询的目录。
+     * 如果发生了错误，会将错误返回。
      * Tip：这里要拿到正确的下一轮等待查询的目录，必须使用nextDirs一个数组单独存放
-     * @param {String} target 目标内容
+     * @param {String} target 目标内容的名称
      * @param {String} dirs 一个目录
      */
     static getTargetPathAndNextDirs(target, dirs) {
-        let targetPath = '';
-        let nextDirs = []; // 存放下一轮等待查找的目录
+        let error = null, targetPath = '', nextDirs = []; // nextDirs 存放下一轮等待查找的目录
 
         // （1）遍历dirs，对每个dir分别执行逻辑
         for (const dir of dirs) {
-            // 如果已经找到路径，退出循环
-            if(targetPath) break;
+            // 如果已经找到路径，或者遇到目录权限的问题，退出dirs循环
+            if (error || targetPath) break;
 
-            // （1.1）读取dir这个目录的内容，遍历他们查找targetPath，和更新nextDirs
-            const contents = fs.readdirSync(dir);
-            for (const content of contents) {
-                const contentPath = `${dir}/${content}`; // 这个内容的路径
-                // （1.2.1）当前的内容名称与目标内容的名称一致，抛出路径，结束后面的逻辑
-                if (content === target) {
-                    targetPath = path.normalize(path.resolve(contentPath));
+            // （1.1）读取dir这个目录内容的名称，遍历他们查找targetPath，和更新nextDirs
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const filePath = `${dir}/${file}`; // 这个内容的路径
+                // （1.2.1）当前的内容名称与目标内容的名称一致，设置路径，跳出files循环，结束后面的逻辑
+                if (file === target) {
+                    targetPath = path.normalize(filePath); // 统一返回的路径分割符的格式
                     break;
                 }
                 // （1.2.2）当前内容不是要查找的目标内容，但是它是一个目录，则放入下一轮的查询
                 else {
-                    // 如果目录没有权限，会报如下的错误：
-                    // EPERM: operation not permitted, stat 'C:\Windows/CSC/v2.0.6'
-                    // 解决方法：使用管理员权限运行
-                    fs.statSync(contentPath).isDirectory() && nextDirs.push(contentPath);
+                    /**
+                     * 目录没有权限，报的错误信息，如下所示：
+                     * EPERM: operation not permitted, stat 'C:\Windows/CSC/v2.0.6'
+                     * 解决方法：使用管理员权限运行。
+                     */
+                    try {
+                        fs.statSync(filePath).isDirectory() && nextDirs.push(filePath);
+                    } catch (err) {
+                        error = err;
+                        break;
+                    }
                 }
             }
         }
 
-        return { targetPath, nextDirs };
+        return { error, targetPath, nextDirs };
     }
 
     /**

@@ -2,10 +2,10 @@
 
 const assert = require('assert');
 const path = require('path');
-const Finder = require('../index');
-const ERROR_MESSAGE = require('../errorMessage.json');
+const Finder = require('.');
+const ERROR_MESSAGE = require('./errorMessage.json');
 
-const pkgDir = path.resolve(__dirname, './../');
+const pkgDir = path.resolve(__dirname, './');
 
 // 测试文件夹深度判断方法
 {
@@ -27,39 +27,34 @@ const pkgDir = path.resolve(__dirname, './../');
             true,
             true,
         ];
-        actuals.forEach((item, i) => {
-            assert.equal(actuals[i], expecteds[i]);
-        });
-        console.log(`测试同步方法完成.${i}`);
+        assert.deepEqual(actuals, expecteds);
+        console.log(`Finder.isDepthOk.${i}`);
     }
-    console.timeEnd(timeName);
+    console.timeEnd(timeName); // 40ms
 }
 
 // 测试同步方法
 {
-    let timeName = '测试同步方法';
+    let timeName = '测试Finder.findSync同步方法';
     console.time(timeName);
     let i = 0;
     while (++i <= 100) {
         const actuals = [
-            path.normalize(Finder.findSync('index.js', pkgDir)),
-            path.normalize(Finder.findSync('index.js', pkgDir, 1)),
-            path.normalize(Finder.findSync('index.test.js', pkgDir)),
-            Finder.findSync('index.test.js', pkgDir, 1).message, // 只查找一层目录，由于深度限制，无法找到文件
-            Finder.findSync('hello.js', pkgDir).message,         // 找不到这个文件
+            Finder.findSync('index.js', pkgDir).targetPath,
+            Finder.findSync('index.js', pkgDir, 1).targetPath,
+            Finder.findSync('file.txt', pkgDir).targetPath,
+            Finder.findSync('file.txt', pkgDir, 1).error.message, // 只查找一层目录，由于深度限制，无法找到文件
+            Finder.findSync('hello.js', pkgDir).error.message,    // 找不到这个文件
         ];
         const expecteds = [
             path.normalize(`${pkgDir}/index.js`),
             path.normalize(`${pkgDir}/index.js`),
-            path.normalize(`${pkgDir}/test/index.test.js`),
+            path.normalize(`${pkgDir}/temp/file.txt`),
             ERROR_MESSAGE.SEARCH_DEPTH_LIMIT,
             ERROR_MESSAGE.TARGET_NOT_FOUND,
         ];
-
-        actuals.forEach((item, index) => {
-            assert.equal(actuals[index], expecteds[index]);
-        });
-        console.log(`测试同步方法完成.${i}`);
+        assert.deepEqual(actuals, expecteds);
+        console.log(`Finder.findSync.${i}`); // 4000ms
     }
     console.timeEnd(timeName);
 }

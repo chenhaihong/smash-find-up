@@ -13,14 +13,19 @@ smash-cli工具使用的查找文件（夹）的方法。
 ```javascript
 const Finder = require('smash-find-up');
 
-const target = 'index.js';                 // 要查找的文件（夹）的名称
-const dir = path.resolve(__dirname, './'); // 在这个目录里面查找，如果不传入这个参数，则在工作目录里查找
-const depth = 0;                           // 查找深度。（默认为0，不做限制）
-const targetPath = Finder.findSync(target, dir, depth);
-if(targetPath instanceof Error) {
+// target => 查找的文件（夹）的名称
+// dir    => 在这个目录里面查找。
+// depth  => 查找深度。（默认为0，不做限制）
+const target = 'index.js';
+const dir = path.resolve(__dirname, './');
+const depth = 0;
+const { error, targetPath } = Finder.findSync(target, dir, depth);
+if (error) {
     // TODO 错误提示
+    console.error(error.message);
 } else {
     // TODO 找到了目标路径
+    console.log(targetPath);
 }
 ```
 
@@ -33,8 +38,8 @@ if(targetPath instanceof Error) {
 ```bash
 # !!!!!!!! 如果提示没有操作权限，请使用管理员权限运行。
 # 在当前目录下查找 index.js 的路径
+$ smash-find-up name=index.js # F:/WWW/smash-find-up/index.js
 $ smf target=index.js
-$ smash-find-up name=index.js
 $ smf n=index.js
 
 # 在当前目录下查找 index.js 的路径，同时，限制查找的目录深度不超过2层

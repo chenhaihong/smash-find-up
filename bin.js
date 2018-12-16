@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const Finder = require('../index');
+const Finder = require('.');
 
 const args = process.argv.slice(2);
 
@@ -30,9 +30,9 @@ function prettty(pathStr) {
     return pathStr.split(path.sep).join('/');
 }
 
-const targetPath = Finder.findSync(target, dir, depth);
-if (targetPath instanceof Error) {
-    console.error(targetPath.message);
+const { error, targetPath } = Finder.findSync(target, dir, depth);
+if (error) {
+    console.error(error.message);
 } else {
-    console.table([prettty(targetPath)]);
+    console.log(prettty(targetPath));
 }

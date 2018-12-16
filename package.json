@@ -1,17 +1,14 @@
 {
   "name": "smash-find-up",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "查找一个指定名称的文件或目录，如果存在，则返回它绝对路径。",
   "main": "index.js",
   "bin": {
-    "smash-find-up": "bin/index.js",
-    "smf": "bin/index.js"
-  },
-  "directories": {
-    "test": "test"
+    "smash-find-up": "bin.js",
+    "smf": "bin.js"
   },
   "scripts": {
-    "test": "node ./test/index.test.js"
+    "test": "node index.test.js"
   },
   "repository": {
     "type": "git",
